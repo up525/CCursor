@@ -50,6 +50,14 @@ npx @cometix/ccursor uninstall
 npx @cometix/ccursor status
 ```
 
+安装器无需 Cursor 账号即可直接开启本地 BYOK 模式。macOS 上，安装器会在打补丁
+后对应用及其嵌套代码统一做本机临时签名（保留组件标识和 entitlements），并清除
+下载隔离标记，避免 Gatekeeper 把已修改的应用误报为“已损坏”。
+
+如果 Cursor 原本未登录，安装器会写入一个只在本地使用的合成 BYOK 身份，让输入框
+不再出现登录门槛。已有的真实 Cursor 登录态绝不会被覆盖；卸载时也只会删除仍能明确
+识别为 Cursor++ 创建的本地身份。
+
 ---
 
 ## Features / 功能特性
@@ -153,7 +161,16 @@ codex login
 codex login status
 ```
 
-然后在 Cursor++ 侧边栏选择 `openai-codex (ChatGPT Auth)`，界面会自动创建一个可用的模型配置。等价的 Provider 配置如下：
+然后打开 Cursor++ 侧边栏：
+
+1. 选择 `openai-codex (ChatGPT Auth)`。
+2. 点击 **Check Login**。
+3. 点击 **Fetch from Codex**。Cursor++ 会调用官方 Codex App Server 的
+   `model/list`，因此结果与当前 ChatGPT 账号实际可见的模型一致。
+4. 点击某个模型，或点击 **Add all**，然后保存 Provider。
+5. 回到 Cursor 原生模型选择器，为每次请求自由选择模型以及该模型支持的思考层级。
+
+项目不再固定写死某个版本的默认模型。Provider 初始模型列表为空，保存前由当前账号动态填充：
 
 ```json
 {
@@ -162,25 +179,11 @@ codex login status
   "type": "openai-codex",
   "baseUrl": "",
   "auth": { "kind": "codex", "value": "" },
-  "models": [
-    {
-      "id": "openai-codex-gpt-5.4",
-      "apiModel": "gpt-5.4",
-      "displayName": "OpenAI Codex (ChatGPT)",
-      "thinking": true,
-      "thinkingLevel": "medium",
-      "contextTokenLimit": 200000,
-      "maxOutputTokens": 8192,
-      "supportsAgent": true,
-      "supportsImages": false,
-      "supportsSandboxing": true,
-      "defaultOn": true
-    }
-  ]
+  "models": []
 }
 ```
 
-登录、token 刷新和安全存储都由官方 Codex 客户端负责。Cursor++ 只运行 `codex login status` 和 `codex exec`，不会打开 `~/.codex/auth.json`。如果 Cursor 自动找不到 CLI，可以在 Provider 中设置 `codexPath`。
+登录、token 刷新、安全存储和模型可用性都由官方 Codex 客户端负责。Cursor++ 只运行 `codex login status`、App Server 的 `model/list` 和 `codex exec`，不会打开 `~/.codex/auth.json`。如果 Cursor 自动找不到 CLI，可以在 Provider 中设置 `codexPath`。
 
 ---
 

@@ -44,6 +44,16 @@ npx @cometix/ccursor uninstall
 npx @cometix/ccursor status
 ```
 
+The installer enables local BYOK mode without a Cursor account. On macOS it
+re-signs the modified app hierarchy locally, preserving component identifiers
+and entitlements, then clears its download quarantine marker so Gatekeeper does
+not misreport the patched app as damaged.
+
+When Cursor is signed out, the installer creates a synthetic local-only BYOK
+identity so the composer does not show a login gate. Existing real Cursor
+sessions are never overwritten, and uninstall removes the synthetic identity
+only when it is still recognisably Cursor++'s.
+
 ---
 
 ## Features
@@ -129,7 +139,19 @@ codex login
 codex login status
 ```
 
-Then select `openai-codex (ChatGPT Auth)` in the Cursor++ sidebar. The UI creates a usable model entry automatically. The equivalent provider entry is:
+Then open the Cursor++ sidebar:
+
+1. Select `openai-codex (ChatGPT Auth)`.
+2. Click **Check Login**.
+3. Click **Fetch from Codex**. Cursor++ calls the official Codex App Server
+   `model/list` method, so the result matches the models visible to the current
+   ChatGPT account.
+4. Click one model, or **Add all**, then save the provider.
+5. Use Cursor's normal model picker to choose the model and its supported
+   reasoning effort for each request.
+
+No release-specific model is hard-coded. A provider starts with an empty model
+list and is populated from the current account:
 
 ```json
 {
@@ -138,25 +160,11 @@ Then select `openai-codex (ChatGPT Auth)` in the Cursor++ sidebar. The UI create
   "type": "openai-codex",
   "baseUrl": "",
   "auth": { "kind": "codex", "value": "" },
-  "models": [
-    {
-      "id": "openai-codex-gpt-5.4",
-      "apiModel": "gpt-5.4",
-      "displayName": "OpenAI Codex (ChatGPT)",
-      "thinking": true,
-      "thinkingLevel": "medium",
-      "contextTokenLimit": 200000,
-      "maxOutputTokens": 8192,
-      "supportsAgent": true,
-      "supportsImages": false,
-      "supportsSandboxing": true,
-      "defaultOn": true
-    }
-  ]
+  "models": []
 }
 ```
 
-Authentication, token refresh, and secure storage stay in the official Codex client. Cursor++ only runs `codex login status` and `codex exec`; it never opens `~/.codex/auth.json`. Set `codexPath` on the provider if Cursor cannot discover the CLI automatically.
+Authentication, token refresh, secure storage, and model availability stay in the official Codex client. Cursor++ only runs `codex login status`, the App Server `model/list` method, and `codex exec`; it never opens `~/.codex/auth.json`. Set `codexPath` on the provider if Cursor cannot discover the CLI automatically.
 
 ---
 

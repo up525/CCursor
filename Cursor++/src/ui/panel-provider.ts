@@ -18,7 +18,7 @@ import * as vscode from 'vscode'
 import { bumpRefreshSignal } from '../server'
 import { searchCatalog } from '../server/config/catalogStore'
 import { updateProviders } from '../server/config/providersStore'
-import { probeCodexAuth, resolveCodexExecutable } from '../server/handlers/llm/codexCli'
+import { listCodexModels, probeCodexAuth, resolveCodexExecutable } from '../server/handlers/llm/codexCli'
 import { resetProviderInstanceCache } from '../server/handlers/llm/providerRuntime'
 import { renderHtml } from './components/layout'
 import { getState, onStateChange, refreshState } from './state'
@@ -132,6 +132,17 @@ export class PanelProvider implements vscode.WebviewViewProvider {
           const providers = getState().providers || []
           const draft = msg.draft as any
           const p = draft || providers.find((x: any) => x.id === pid)
+          if (p?.type === 'openai-codex') {
+            try {
+              const models = await listCodexModels(p.codexPath)
+              this.view?.webview.postMessage({ type: 'remoteModelsResult', pid, models })
+            }
+            catch (err) {
+              const errMsg = err instanceof Error ? err.message : String(err)
+              this.view?.webview.postMessage({ type: 'remoteModelsResult', pid, error: errMsg })
+            }
+            break
+          }
           if (!p?.auth?.value) {
             this.view?.webview.postMessage({ type: 'remoteModelsResult', pid, error: 'Auth value not set' })
             break

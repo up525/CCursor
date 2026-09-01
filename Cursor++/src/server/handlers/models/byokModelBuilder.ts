@@ -42,6 +42,7 @@ const LEVEL_LABELS: Record<string, string> = {
   high: 'High',
   xhigh: 'Extra High',
   max: 'Max',
+  ultra: 'Ultra',
 }
 
 function formatBudgetLabel(budget: number): string {

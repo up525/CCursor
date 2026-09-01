@@ -56,7 +56,7 @@ const TEST_PROVIDERS: ProvidersConfig = {
       models: [
         {
           id: 'openai-codex-test',
-          apiModel: 'gpt-5.4',
+          apiModel: 'gpt-5.6-terra',
           displayName: 'OpenAI Codex Test',
           thinking: true,
           thinkingLevel: 'medium',

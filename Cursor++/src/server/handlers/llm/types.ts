@@ -4,6 +4,7 @@
  * 各 provider (Anthropic/OpenAI/Gemini) 实现此接口，
  * Agent/Chat 协议翻译层只依赖这些类型，不直接依赖具体 SDK。
  */
+import type { ThinkingLevel } from '../../data/defaults'
 
 /** 对话消息 */
 export interface LLMMessage {
@@ -57,7 +58,7 @@ export interface LLMStreamRequest {
   maxTokens?: number
   thinking?: boolean
   /** 思考档位 — Anthropic 4.5-opus/4.6+ / OpenAI / Gemini 消费; 见 ProviderModel.thinkingLevel */
-  thinkingLevel?: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max'
+  thinkingLevel?: ThinkingLevel
   /** 精确思考预算 — 老 Claude 4.x (legacy budget_tokens) / Gemini 精确覆盖 */
   thinkingBudgetTokens?: number
   /** 会话 ID — OpenAI prompt_cache_key (同会话共享前缀缓存) */

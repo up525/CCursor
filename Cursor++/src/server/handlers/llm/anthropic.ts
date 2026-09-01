@@ -39,6 +39,7 @@ function mapThinkingLevelToAnthropicEffort(level: NonNullable<LLMStreamRequest['
         case 'high': return 'high';
         case 'xhigh': return 'max';       // Anthropic SDK effort 最高档为 max
         case 'max': return 'max';
+        case 'ultra': return 'max';       // Ultra 仅由 Codex 原生支持;其他 provider 饱和到最高档
     }
 }
 

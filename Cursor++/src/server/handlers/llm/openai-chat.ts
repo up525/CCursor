@@ -57,9 +57,9 @@ export class OpenAIChatProvider implements LLMProvider {
             params.tools = tools;
         }
 
-        // OpenAI reasoning_effort: minimal | low | medium | high | xhigh | max
+        // Ultra is a Codex multi-agent preset, not an OpenAI API reasoning_effort.
         if (request.thinkingLevel) {
-            params.reasoning_effort = request.thinkingLevel;
+            params.reasoning_effort = request.thinkingLevel === 'ultra' ? 'max' : request.thinkingLevel;
         }
 
         const stream = await this.client.chat.completions.create(params);

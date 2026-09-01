@@ -8,6 +8,7 @@
  *   4. Restore always-local group (product.json → extensionHostProcess.js → always-local.js)
  *   5. Restore inject group (product.json → workbench.js)
  *   6. Remove extensions/cursor2plus/
+ *   7. Remove local BYOK identity and re-seal macOS resources
  *
  * local-mode 是游离于主 installer 之外的特殊工具，
  * 只通过 `ccursor local-mode` / `ccursor local-mode-off` 管理。
@@ -17,6 +18,8 @@ import { findCursorPathsDetailed, formatDiagnostic } from './detect.js';
 import { restoreBackup } from './backup.js';
 import { removeExtension } from './extension-embed.js';
 import { getAgentHostBackupTargets } from './patch-agent-host.js';
+import { clearLocalByokAuth } from './local-byok-auth.js';
+import { clearMacOSQuarantine, repairMacOSSignature } from './macos-quarantine.js';
 
 const ok = msg => console.log(`\x1b[32m[OK]\x1b[0m ${msg}`);
 const info = msg => console.log(`\x1b[34m[>]\x1b[0m ${msg}`);
@@ -74,6 +77,11 @@ export async function uninstall() {
 
   // 6. 删除扩展
   removeExtension(paths, info);
+
+  // 7. 只删除仍属于 Cursor++ 的合成本地身份；真实账号始终保留。
+  clearLocalByokAuth(info);
+  repairMacOSSignature(paths.appRoot, info);
+  clearMacOSQuarantine(paths.appRoot, info);
 
   console.log('');
   if (restored > 0) {

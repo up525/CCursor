@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveCodexExecutable } from '../handlers/llm/codexCli'
+import { normalizeCodexModels, resolveCodexExecutable } from '../handlers/llm/codexCli'
 import { buildCodexExecArgs, serializeCodexPrompt } from '../handlers/llm/openai-codex'
 
 describe('openAI Codex provider', () => {
@@ -22,9 +22,43 @@ describe('openAI Codex provider', () => {
     expect(prompt).not.toContain('SECRET_BASE64')
   })
 
+  it('normalizes account-aware model metadata and reasoning choices', () => {
+    expect(normalizeCodexModels([
+      {
+        id: 'gpt-5.6-sol',
+        model: 'gpt-5.6-sol',
+        displayName: 'GPT-5.6-Sol',
+        description: 'Latest frontier agentic coding model.',
+        supportedReasoningEfforts: [
+          { reasoningEffort: 'low', description: 'Fast' },
+          { reasoningEffort: 'ultra', description: 'Delegated' },
+        ],
+        defaultReasoningEffort: 'low',
+        inputModalities: ['text', 'image'],
+        isDefault: true,
+      },
+      { id: '', model: '' },
+      null,
+    ])).toEqual([{
+      id: 'gpt-5.6-sol',
+      model: 'gpt-5.6-sol',
+      displayName: 'GPT-5.6-Sol',
+      description: 'Latest frontier agentic coding model.',
+      hidden: false,
+      supportedReasoningEfforts: [
+        { reasoningEffort: 'low', description: 'Fast' },
+        { reasoningEffort: 'ultra', description: 'Delegated' },
+      ],
+      defaultReasoningEffort: 'low',
+      inputModalities: ['text', 'image'],
+      supportsPersonality: false,
+      isDefault: true,
+    }])
+  })
+
   it('uses a non-interactive read-only sandbox outside Agent mode', () => {
     const args = buildCodexExecArgs({
-      model: 'gpt-5.4',
+      model: 'gpt-5.6-terra',
       messages: [],
       thinking: true,
       thinkingLevel: 'medium',
@@ -47,7 +81,7 @@ describe('openAI Codex provider', () => {
 
   it('allows workspace writes only in Agent mode', () => {
     const args = buildCodexExecArgs({
-      model: 'gpt-5.4',
+      model: 'gpt-5.6-terra',
       messages: [],
       workingDirectory: '/tmp/example-workspace',
       agentMode: 'AGENT_MODE_AGENT',
@@ -57,12 +91,24 @@ describe('openAI Codex provider', () => {
 
   it('maps disabled host reasoning to the CLI minimal effort', () => {
     const args = buildCodexExecArgs({
-      model: 'gpt-5.4',
+      model: 'gpt-5.6-terra',
       messages: [],
       thinking: false,
       workingDirectory: '/tmp/example-workspace',
       agentMode: 'AGENT_MODE_ASK',
     })
     expect(args).toContain('model_reasoning_effort="minimal"')
+  })
+
+  it('passes Ultra through when the selected model advertises it', () => {
+    const args = buildCodexExecArgs({
+      model: 'gpt-5.6-sol',
+      messages: [],
+      thinking: true,
+      thinkingLevel: 'ultra',
+      workingDirectory: '/tmp/example-workspace',
+      agentMode: 'AGENT_MODE_ASK',
+    })
+    expect(args).toContain('model_reasoning_effort="ultra"')
   })
 })

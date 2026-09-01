@@ -78,7 +78,8 @@ export class OpenAIResponsesProvider implements LLMProvider {
     // Reasoning — Responses API 用 reasoning 嵌套对象 (非顶层 reasoning_effort)
     if (request.thinkingLevel) {
       params.reasoning = {
-        effort: request.thinkingLevel,
+        // Ultra is a Codex multi-agent preset, not a Responses API effort.
+        effort: request.thinkingLevel === 'ultra' ? 'max' : request.thinkingLevel,
         summary: 'auto',
       }
       // encrypted_content 用于多轮保留推理上下文 (参照 Codex CLI)

@@ -18,7 +18,15 @@ export function ModelsSection() {
         >
         </span>
         <span class="models-header-actions">
-          <button class="tiny secondary" x-show="p.type !== 'openai-codex'" {...{ 'x-on:click': '$store.app.fetchRemoteModels(p.id)' }}>↓ Fetch</button>
+          <button
+            class="tiny secondary"
+            {...{
+              'x-on:click': '$store.app.fetchRemoteModels(p.id)',
+              'x-text': `p.type === 'openai-codex' ? '↓ Fetch from Codex' : '↓ Fetch'`,
+            }}
+          >
+            ↓ Fetch
+          </button>
           <button class="tiny secondary" {...{ 'x-on:click': '$store.app.addModel(p.id)' }}>+ Add Model</button>
         </span>
       </div>
@@ -32,6 +40,13 @@ export function ModelsSection() {
               {...{ 'x-text': '\'Available (\' + $store.app.remoteModels[p.id].models.length + \')\'' }}
             >
             </span>
+            <button
+              class="tiny secondary"
+              x-show="p.type === 'openai-codex'"
+              {...{ 'x-on:click': '$store.app.applyAllRemoteModels(p.id)' }}
+            >
+              + Add all
+            </button>
             <button class="tiny ghost" {...{ 'x-on:click': '$store.app.dismissRemoteModels(p.id)' }}>✕</button>
           </div>
           <div class="remote-models-list">
@@ -39,8 +54,9 @@ export function ModelsSection() {
               <div
                 class="remote-model-item"
                 {...{
-                  'x-on:click': '$store.app.applyRemoteModel(p.id, rm.id)',
-                  'x-text': 'rm.id',
+                  'x-on:click': '$store.app.applyRemoteModel(p.id, rm)',
+                  'x-text': '$store.app.remoteModelLabel(rm)',
+                  'x-bind:title': 'rm.description || rm.id',
                 }}
               >
               </div>
@@ -54,12 +70,10 @@ export function ModelsSection() {
           No models. Click
           {' '}
           <b>+ Add Model</b>
-          <span x-show="p.type !== 'openai-codex'">
-            {' '}
-            or
-            {' '}
-            <b>↓ Fetch</b>
-          </span>
+          {' '}
+          or
+          {' '}
+          <b x-text="p.type === 'openai-codex' ? '↓ Fetch from Codex' : '↓ Fetch'">↓ Fetch</b>
           {' '}
           to get started.
         </div>

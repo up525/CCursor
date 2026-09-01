@@ -20,6 +20,7 @@ function mapThinkingLevelToGemini(level: NonNullable<LLMStreamRequest['thinkingL
         case 'high': return ThinkingLevel.HIGH;
         case 'xhigh': return ThinkingLevel.HIGH; // Gemini 最高档为 HIGH
         case 'max': return ThinkingLevel.HIGH;
+        case 'ultra': return ThinkingLevel.HIGH;
     }
 }
 

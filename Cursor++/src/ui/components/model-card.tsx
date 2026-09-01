@@ -17,6 +17,7 @@ const THINKING_LEVELS_OPENAI = [
   { value: 'xhigh', label: 'xhigh' },
   { value: 'max', label: 'max' },
 ]
+const THINKING_LEVELS_CODEX = [...THINKING_LEVELS_OPENAI, { value: 'ultra', label: 'ultra' }]
 const THINKING_LEVELS_GEMINI = [
   { value: 'minimal', label: 'minimal' },
   { value: 'low', label: 'low' },
@@ -25,6 +26,7 @@ const THINKING_LEVELS_GEMINI = [
 ]
 const QS_LEVELS_ANTHROPIC = THINKING_LEVELS_ANTHROPIC.map(l => l.value)
 const QS_LEVELS_OPENAI = THINKING_LEVELS_OPENAI.map(l => l.value)
+const QS_LEVELS_CODEX = THINKING_LEVELS_CODEX.map(l => l.value)
 const QS_LEVELS_GEMINI = THINKING_LEVELS_GEMINI.map(l => l.value)
 
 /**
@@ -188,13 +190,23 @@ export function ModelCard() {
           </template>
 
           {/* ── OpenAI: Level only ── */}
-          <template x-if="m.thinking && (p.type === 'openai-chat' || p.type === 'openai-responses' || p.type === 'openai-codex')">
+          <template x-if="m.thinking && (p.type === 'openai-chat' || p.type === 'openai-responses')">
             <div class="check thinking-level-cell">
               <CustomSelect
                 valueExpr="m.thinkingLevel || 'medium'"
                 changeExpr="$store.app.updateModelField(p.id, m.id, 'thinkingLevel', $value)"
                 options={THINKING_LEVELS_OPENAI}
                 title="reasoning_effort"
+              />
+            </div>
+          </template>
+          <template x-if="m.thinking && p.type === 'openai-codex'">
+            <div class="check thinking-level-cell">
+              <CustomSelect
+                valueExpr="m.thinkingLevel || 'medium'"
+                changeExpr="$store.app.updateModelField(p.id, m.id, 'thinkingLevel', $value)"
+                options={THINKING_LEVELS_CODEX}
+                title="Codex reasoning effort (model-specific options are exposed in Cursor's model picker)"
               />
             </div>
           </template>
@@ -392,8 +404,8 @@ export function ModelCard() {
               </div>
             </template>
 
-            {/* ── OpenAI: Reasoning Levels (single enum, None auto-prepended) ── */}
-            <template x-if="p.type === 'openai-chat' || p.type === 'openai-responses' || p.type === 'openai-codex'">
+            {/* ── OpenAI API: Reasoning Levels (single enum, None auto-prepended) ── */}
+            <template x-if="p.type === 'openai-chat' || p.type === 'openai-responses'">
               <div class="qs-item" title="Expose reasoning level selector in Edit panel (None = off)">
                 <div class="qs-row">
                   <span class="qs-label">Reasoning Levels</span>
@@ -407,6 +419,31 @@ export function ModelCard() {
                   <div class="qs-item-body">
                     <div class="qs-chips">
                       {QS_LEVELS_OPENAI.map(lv => (
+                        <label class="qs-chip" key={lv}>
+                          <input type="checkbox" x-bind:checked={`m.parameters?.reasoning?.includes('${lv}')`} x-on:change={`$store.app.toggleEditParamArrayItem(p.id, m.id, 'reasoning', '${lv}', $event.target.checked)`} />
+                          <span>{lv}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </template>
+            {/* Codex gets account/model-specific levels after model/list sync; Ultra is Codex-only. */}
+            <template x-if="p.type === 'openai-codex'">
+              <div class="qs-item" title="Expose the selected Codex model's supported reasoning levels in Cursor's model picker">
+                <div class="qs-row">
+                  <span class="qs-label">Reasoning Levels</span>
+                  <label class="qs-switch">
+                    <input type="checkbox" x-bind:checked="Array.isArray(m.parameters?.reasoning)" x-on:change={`$store.app.setEditParam(p.id, m.id, 'reasoning', $event.target.checked ? ${JSON.stringify(QS_LEVELS_CODEX)} : undefined)`} />
+                    <span class="qs-switch-track"></span>
+                    <span class="qs-switch-knob"></span>
+                  </label>
+                </div>
+                <template x-if="Array.isArray(m.parameters?.reasoning)">
+                  <div class="qs-item-body">
+                    <div class="qs-chips">
+                      {QS_LEVELS_CODEX.map(lv => (
                         <label class="qs-chip" key={lv}>
                           <input type="checkbox" x-bind:checked={`m.parameters?.reasoning?.includes('${lv}')`} x-on:change={`$store.app.toggleEditParamArrayItem(p.id, m.id, 'reasoning', '${lv}', $event.target.checked)`} />
                           <span>{lv}</span>

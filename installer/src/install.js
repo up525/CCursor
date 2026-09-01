@@ -10,7 +10,8 @@
  *   5. 注入 cursor-agent-host 独立 HTTP/1.1 transport 拦截并禁用 WebSocket
  *   6. Cursor 3.9+ always-local singleton BYOK router + HTTP/1.1 proxy 修补
  *   7. KaTeX CSS link 修补 (workbench.html)
- *   8. 提示重启
+ *   8. macOS 重新封装资源签名并移除下载隔离标记
+ *   9. 提示重启
  */
 import { existsSync, readFileSync } from 'fs';
 import { findCursorPathsDetailed, formatDiagnostic } from './detect.js';
@@ -23,6 +24,8 @@ import { patchKatex } from './patch-katex.js';
 import { patchProxy39, needsProxy39Patch, isProxy39Patched } from './patch-proxy-39.js';
 // delete-fix 已移除 — 3.2.11 原生 tombstoneDeletedComposer 已覆盖
 import { releaseDefaults } from './release-defaults.js';
+import { clearMacOSQuarantine, repairMacOSSignature } from './macos-quarantine.js';
+import { seedLocalByokAuth } from './local-byok-auth.js';
 
 const ok = msg => console.log(`\x1b[32m[OK]\x1b[0m ${msg}`);
 const info = msg => console.log(`\x1b[34m[>]\x1b[0m ${msg}`);
@@ -57,6 +60,9 @@ export async function install() {
     || hasBackup(paths.alwaysLocalSingletonJs) || hasBackup(paths.extensionHostJs) || agentHostBackups;
 
   if (extInstalled && hookInjected && alPatched && agentHostPatched && proxy39Ok) {
+    seedLocalByokAuth(info);
+    repairMacOSSignature(paths.appRoot, info);
+    clearMacOSQuarantine(paths.appRoot, info);
     ok('Already fully installed');
     info('To reinstall, run "ccursor uninstall" first');
     return;
@@ -72,6 +78,7 @@ export async function install() {
 
   // 1. 释放默认配置到 ~/.ccursor/ (尊重已有用户文件)
   releaseDefaults(info);
+  seedLocalByokAuth(info);
 
   // 2. 安装扩展
   installExtension(paths, info);
@@ -90,6 +97,10 @@ export async function install() {
 
   // 7. KaTeX CSS link (workbench.html + checksum)
   patchKatex(paths, info);
+
+  // 8. Re-seal modified resources, then remove the download quarantine marker.
+  repairMacOSSignature(paths.appRoot, info);
+  clearMacOSQuarantine(paths.appRoot, info);
 
   console.log('');
   ok('Installation complete!');

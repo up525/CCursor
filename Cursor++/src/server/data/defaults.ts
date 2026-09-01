@@ -146,7 +146,7 @@ export interface ProviderAuth {
  *   - Gemini thinkingConfig.thinkingLevel: xhigh→HIGH (饱和)
  * 用户应按 model 是否支持选填;不填则 handler 回退默认行为。
  */
-export type ThinkingLevel = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max'
+export type ThinkingLevel = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra'
 
 export interface ProviderModel {
   id: string

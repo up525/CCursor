@@ -5,6 +5,7 @@
  * Alpine 响应式代理自动追踪 mutation → DOM 更新, 无需手动 render() / rebind。
  */
 import type { Alpine as AlpineType } from 'alpinejs'
+import { mergeCodexCatalogModel, remoteCodexModelLabel } from '../codex-models'
 
 declare function acquireVsCodeApi(): { postMessage: (msg: any) => void, getState: () => any, setState: (s: any) => void }
 
@@ -401,22 +402,8 @@ export function initApp(Alpine: AlpineType) {
         d.baseUrl = ''
         delete d.proxyUrl
         delete d.headers
-        if (!Array.isArray(d.models) || d.models.length === 0) {
-          d.models = [{
-            id: uid('model'),
-            apiModel: 'gpt-5.4',
-            displayName: 'OpenAI Codex (ChatGPT)',
-            thinking: true,
-            thinkingLevel: 'medium',
-            contextTokenLimit: 200000,
-            maxOutputTokens: 8192,
-            supportsAgent: true,
-            supportsImages: false,
-            supportsSandboxing: true,
-            defaultOn: true,
-            parameters: { reasoning: ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] },
-          }]
-        }
+        if (!Array.isArray(d.models))
+          d.models = []
         this.checkCodexAuth(pid)
       }
       else if (d.type !== 'anthropic') {
@@ -576,6 +563,8 @@ export function initApp(Alpine: AlpineType) {
         return ['low', 'medium', 'high', 'xhigh', 'max']
       if (pType === 'gemini')
         return ['minimal', 'low', 'medium', 'high']
+      if (pType === 'openai-codex')
+        return ['minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra']
       return ['minimal', 'low', 'medium', 'high', 'xhigh', 'max']
     },
 
@@ -792,16 +781,16 @@ export function initApp(Alpine: AlpineType) {
       this.ac = null
     },
 
-    // ── Remote Models (GET /v1/models) ──
+    // ── Remote Models (HTTP /v1/models or official Codex App Server model/list) ──
     fetchRemoteModels(pid: string) {
       if (this.remoteModels[pid]?.loading)
         return
       const draft = this.getDraft(pid)
-      if (!draft.baseUrl?.trim()) {
+      if (draft.type !== 'openai-codex' && !draft.baseUrl?.trim()) {
         this.toast('Please set Base URL first', 'warn')
         return
       }
-      if (!draft.auth?.value?.trim()) {
+      if (draft.type !== 'openai-codex' && !draft.auth?.value?.trim()) {
         this.toast('Please set Auth value first', 'warn')
         return
       }
@@ -825,9 +814,58 @@ export function initApp(Alpine: AlpineType) {
       this.remoteModels = rest
     },
 
-    applyRemoteModel(pid: string, modelId: string) {
-      this.addModel(pid)
+    remoteModelLabel(remoteModel: any): string {
+      return remoteCodexModelLabel(remoteModel)
+    },
+
+    _upsertCodexRemoteModel(pid: string, remoteModel: any): any {
       const d = this.ensureDraft(pid)
+      if (d.type !== 'openai-codex' || !remoteModel)
+        return null
+      if (!Array.isArray(d.models))
+        d.models = []
+      const apiModel = String(remoteModel.model || remoteModel.id || '').trim()
+      let model = d.models.find((item: any) => item.apiModel === apiModel)
+      const merged = mergeCodexCatalogModel(remoteModel, model)
+      if (!merged)
+        return null
+      if (model) {
+        Object.assign(model, merged)
+      }
+      else {
+        model = merged
+        d.models.push(model)
+      }
+      return model
+    },
+
+    applyAllRemoteModels(pid: string) {
+      const remote = this.remoteModels[pid]?.models || []
+      let applied = 0
+      for (const model of remote) {
+        if (this._upsertCodexRemoteModel(pid, model))
+          applied++
+      }
+      this.toast(`${applied} Codex models added or updated. Save the provider to apply them.`, 'info', 6000)
+    },
+
+    applyRemoteModel(pid: string, remoteModel: any) {
+      const d = this.ensureDraft(pid)
+      if (d.type === 'openai-codex' && typeof remoteModel === 'object') {
+        const model = this._upsertCodexRemoteModel(pid, remoteModel)
+        if (model) {
+          if (!this.modelExpanded[pid])
+            this.modelExpanded[pid] = {}
+          this.modelExpanded[pid][model.id] = true
+          this.toast(`${model.displayName} added. Save the provider to apply it.`, 'info')
+        }
+        return
+      }
+
+      const modelId = typeof remoteModel === 'string' ? remoteModel : remoteModel?.id
+      if (!modelId)
+        return
+      this.addModel(pid)
       const models = d.models || []
       const lastModel = models[models.length - 1]
       if (lastModel) {

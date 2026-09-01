@@ -4,6 +4,36 @@ All notable changes to the Cursor++ BYOK extension are documented here.
 
 Format follows [Keep a Changelog](http://keepachangelog.com/).
 
+## [0.0.17]
+
+### Added
+
+- Account-aware OpenAI Codex model discovery through the official App Server
+  `model/list` API
+- Per-model reasoning choices from the live Codex catalog, including `ultra`
+  when the selected model and account advertise it
+- Cursor++ controls to fetch one model or add all currently available Codex models
+
+### Changed
+
+- New OpenAI Codex providers no longer hard-code a default model
+- Synced Codex models appear independently in Cursor's model picker, with their
+  supported reasoning efforts exposed as model variants
+- Live authentication coverage now discovers the account's default model instead
+  of assuming a release-specific model id
+
+### Fixed
+
+- Fresh installs now enable the complete local BYOK route set without requiring
+  a Cursor account or completed onboarding
+- Signed-out Cursor installations receive a synthetic local-only BYOK identity
+  using Cursor's own test-token shape, removing the composer login gate without
+  reading or overwriting real account credentials
+- The macOS installer re-signs patched application resources and nested code
+  consistently with a local ad-hoc signature, preserves component identifiers
+  and entitlements, then clears the download quarantine marker to prevent
+  Gatekeeper's misleading "Cursor.app is damaged" alert
+
 ## [0.0.16]
 
 ### Added
