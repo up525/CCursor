@@ -63,7 +63,7 @@ it('resolvePromptProfile exposes provider-specific prompt and tool metadata', ()
   const geminiProfile = resolvePromptProfile('gemini-3.1-pro-preview')
   const fallbackProfile = resolvePromptProfile('composer-2-fast')
 
-  // Cursor++ 把 OpenAI 拆成 openai-chat / openai-responses 两种 ProviderType
+  // OpenAI API provider 保持现有 prompt profile。
   expect(openaiProfile.provider).toBe('openai-chat')
   expect(openaiProfile.systemPromptStyle).toBe('openai-main')
   // OPENAI_VOCAB: Shell ReadFile ApplyPatch Write SwitchMode CallMcpTool ListMcpResources FetchMcpResource ReadLints
@@ -173,11 +173,16 @@ it('resolveModel and inferred model metadata expose context window information',
 
 it('routeModel exposes conversation codec aligned with prompt profile', () => {
   const openaiRoute = routeModel('gpt-5.4-medium')
+  const codexRoute = routeModel('openai-codex-test')
   const geminiRoute = routeModel('gemini-3.1-pro-preview')
   expect(openaiRoute.provider.name).toBe('openai-chat')
   expect(openaiRoute.stateStrategy.name).toBe('openai-chat')
   expect(openaiRoute.conversationCodec.name).toBe('openai-chat')
   expect(openaiRoute.promptProfile.provider).toBe('openai-chat')
+  expect(codexRoute.provider.name).toBe('openai-codex')
+  expect(codexRoute.stateStrategy.name).toBe('openai-chat')
+  expect(codexRoute.conversationCodec.name).toBe('openai-chat')
+  expect(codexRoute.promptProfile.provider).toBe('openai-codex')
   expect(geminiRoute.provider.name).toBe('gemini')
   expect(geminiRoute.stateStrategy.name).toBe('gemini')
   expect(geminiRoute.conversationCodec.name).toBe('gemini-native')

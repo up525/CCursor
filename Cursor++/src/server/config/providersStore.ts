@@ -63,6 +63,7 @@ function withFallback(loaded: Partial<ProvidersConfig> | null): ProvidersConfig 
       type: p.type,
       baseUrl: p.baseUrl ?? '',
       auth: p.auth ?? { kind: 'apiKey', value: '' },
+      ...(p.codexPath ? { codexPath: p.codexPath } : {}),
       models: Array.isArray(p.models) ? p.models : [],
       ...(p.proxyUrl ? { proxyUrl: p.proxyUrl } : {}),
       ...(p.headers && typeof p.headers === 'object' && Object.keys(p.headers).length > 0 ? { headers: p.headers } : {}),

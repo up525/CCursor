@@ -52,6 +52,7 @@ function canonicalProvider(provider: any): any {
     type: provider.type,
     baseUrl: provider.baseUrl ?? '',
     auth: canonicalValue(provider.auth ?? { kind: 'apiKey', value: '' }),
+    ...(provider.codexPath ? { codexPath: provider.codexPath } : {}),
     models: canonicalValue(Array.isArray(provider.models) ? provider.models : []),
     ...(provider.proxyUrl ? { proxyUrl: provider.proxyUrl } : {}),
     ...(headers && Object.keys(headers).length > 0 ? { headers } : {}),
@@ -78,6 +79,7 @@ export function initApp(Alpine: AlpineType) {
     modelExpanded: {} as Record<string, Record<string, boolean>>,
     headersInvalid: {} as Record<string, boolean>,
     remoteModels: {} as Record<string, { loading: boolean, models?: any[], error?: string }>,
+    codexAuth: {} as Record<string, { loading?: boolean, authenticated?: boolean, detail?: string }>,
     saveSnapshots: {} as Record<string, { targetIds: string[], snapshots: Record<string, any> }>,
     savingProviders: {} as Record<string, boolean>,
 
@@ -232,7 +234,7 @@ export function initApp(Alpine: AlpineType) {
 
       if (!p.name?.trim())
         errors.name = 'Name is required'
-      if (!['anthropic', 'openai-chat', 'openai-responses', 'gemini'].includes(p.type))
+      if (!['anthropic', 'openai-chat', 'openai-responses', 'openai-codex', 'gemini'].includes(p.type))
         errors.type = 'Invalid type'
       if (p.baseUrl?.trim()) {
         try {
@@ -242,12 +244,16 @@ export function initApp(Alpine: AlpineType) {
           errors.baseUrl = 'Invalid URL'
         }
       }
-      if (!p.auth?.value?.trim())
+      if (p.type !== 'openai-codex' && !p.auth?.value?.trim())
         errors.authValue = 'Auth value is required'
       // Anthropic 允许 apiKey / token 两种; 其他 provider 只允许 apiKey
       if (p.type === 'anthropic') {
         if (!['apiKey', 'token'].includes(p.auth?.kind))
           errors.authKind = 'Invalid auth kind'
+      }
+      else if (p.type === 'openai-codex') {
+        if (p.auth?.kind !== 'codex')
+          errors.authKind = 'openai-codex uses the official Codex login'
       }
       else if (p.auth?.kind !== 'apiKey') {
         errors.authKind = `${p.type} only supports apiKey`
@@ -384,12 +390,36 @@ export function initApp(Alpine: AlpineType) {
     /**
      * 切换 provider type 后规范化 auth.kind:
      *   - anthropic 同时支持 apiKey / bearer token, 保留用户选择
+     *   - openai-codex 不存储 token,固定使用 codex 标记
      *   - 其他 provider (openai-chat / openai-responses / gemini) 只支持 apiKey,
      *     强制重置为 apiKey 避免旧的 "token" 残留污染
      */
     normalizeAuthKind(pid: string) {
       const d = this.ensureDraft(pid)
-      if (d.type !== 'anthropic') {
+      if (d.type === 'openai-codex') {
+        d.auth = { kind: 'codex', value: '' }
+        d.baseUrl = ''
+        delete d.proxyUrl
+        delete d.headers
+        if (!Array.isArray(d.models) || d.models.length === 0) {
+          d.models = [{
+            id: uid('model'),
+            apiModel: 'gpt-5.4',
+            displayName: 'OpenAI Codex (ChatGPT)',
+            thinking: true,
+            thinkingLevel: 'medium',
+            contextTokenLimit: 200000,
+            maxOutputTokens: 8192,
+            supportsAgent: true,
+            supportsImages: false,
+            supportsSandboxing: true,
+            defaultOn: true,
+            parameters: { reasoning: ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] },
+          }]
+        }
+        this.checkCodexAuth(pid)
+      }
+      else if (d.type !== 'anthropic') {
         d.auth = { ...(d.auth || { value: '' }), kind: 'apiKey' }
       }
     },
@@ -515,7 +545,7 @@ export function initApp(Alpine: AlpineType) {
       if (!m)
         return
       const pType = d.type as string
-      const isOpenAI = pType === 'openai-chat' || pType === 'openai-responses'
+      const isOpenAI = pType === 'openai-chat' || pType === 'openai-responses' || pType === 'openai-codex'
 
       if (m.thinking && m.thinkingLevel) {
         if (!m.parameters)
@@ -779,6 +809,17 @@ export function initApp(Alpine: AlpineType) {
       this.post('fetchRemoteModels', { pid, draft: JSON.parse(JSON.stringify(draft)) })
     },
 
+    checkCodexAuth(pid: string) {
+      const draft = this.getDraft(pid)
+      this.codexAuth = { ...this.codexAuth, [pid]: { loading: true, detail: 'Checking Codex login…' } }
+      this.post('checkCodexAuth', { pid, codexPath: draft.codexPath || '' })
+    },
+
+    loginCodex(pid: string) {
+      const draft = this.getDraft(pid)
+      this.post('loginCodex', { pid, codexPath: draft.codexPath || '' })
+    },
+
     dismissRemoteModels(pid: string) {
       const { [pid]: _, ...rest } = this.remoteModels
       this.remoteModels = rest
@@ -883,6 +924,21 @@ export function initApp(Alpine: AlpineType) {
       else {
         s.remoteModels = { ...s.remoteModels, [pid]: { loading: false, models: msg.models || [] } }
       }
+    }
+    else if (msg?.type === 'codexAuthResult') {
+      const pid = msg.pid as string
+      s.codexAuth = {
+        ...s.codexAuth,
+        [pid]: {
+          loading: false,
+          authenticated: msg.authenticated === true,
+          detail: msg.detail || 'Unable to determine Codex login state.',
+        },
+      }
+      if (msg.authenticated)
+        s.toast('OpenAI Codex is signed in.', 'info')
+      else
+        s.toast(msg.detail || 'OpenAI Codex is not signed in.', 'warn', 6000)
     }
     else if (msg?.type === 'catalogResults') {
       if (!s.ac || msg.requestId !== s.ac.reqId)

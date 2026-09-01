@@ -66,6 +66,10 @@ export interface LLMStreamRequest {
   serviceTier?: 'priority' | 'default'
   /** Anthropic beta headers — 如 context-1m, interleaved-thinking 等 */
   anthropicBetas?: string[]
+  /** Cursor workspace root used by local agent-backed providers. */
+  workingDirectory?: string
+  /** Cursor Agent mode, used to choose a safe Codex sandbox policy. */
+  agentMode?: string
 }
 
 /** Provider 接口 — 各 SDK 实现此接口 */

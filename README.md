@@ -20,7 +20,7 @@
 
 ## What is Cursor++?
 
-Cursor++ lets you use **your own LLM API keys** (Anthropic, OpenAI, Google Gemini, or any OpenAI-compatible provider) with [Cursor IDE](https://cursor.com), bypassing the official subscription. It runs a local BYOK server inside Cursor's extension host, intercepts ConnectRPC/REST traffic, and routes LLM requests to your configured providers.
+Cursor++ lets you use **your own LLM API keys** (Anthropic, OpenAI, Google Gemini, or any OpenAI-compatible provider) or an **OpenAI Codex ChatGPT login** with [Cursor IDE](https://cursor.com). It runs a local BYOK server inside Cursor's extension host, intercepts ConnectRPC/REST traffic, and routes LLM requests to your configured providers.
 
 ---
 
@@ -31,6 +31,11 @@ Cursor++ lets you use **your own LLM API keys** (Anthropic, OpenAI, Google Gemin
 npx @cometix/ccursor install
 
 # Restart Cursor, then open the Cursor++ sidebar panel to configure providers
+
+# Optional: use a ChatGPT account through the official OpenAI Codex CLI
+npm install -g @openai/codex
+codex login
+# In Cursor++: add a provider and select "openai-codex (ChatGPT Auth)"
 
 # Uninstall
 npx @cometix/ccursor uninstall
@@ -44,14 +49,14 @@ npx @cometix/ccursor status
 ## Features
 
 - **BYOK Mode Toggle** — Sidebar one-click switch between BYOK and official Cursor
-- **Multi-Provider** — Anthropic, OpenAI (Chat + Responses API), Google Gemini, or any compatible endpoint
+- **Multi-Provider** — Anthropic, OpenAI APIs, OpenAI Codex (ChatGPT Auth), Google Gemini, or any compatible endpoint
+- **Official OpenAI Auth Bridge** — Reuses the official Codex CLI login; Cursor++ never reads or stores ChatGPT OAuth tokens
 - **Full Agent Mode** — Tool calling, multi-turn conversations, auto-summarization, checkpoint persistence
 - **Model Config UI** — Visual provider/model management with thinking level, context limits, variant display
 - **Error Banner** — LLM errors surface as Cursor's native retry banner with retryable/non-retryable classification
 - **Per-Window Logging** — Each window gets its own log stream, colored output in LogOutputChannel
 - **Hot-Reload** — Config changes take effect without restarting Cursor
 - **22 Agent Tools** — Shell, Read, Grep, Glob, StrReplace, Write, Task, MCP, etc.
-- **Hub Integration** — Device authorization via LinuxDO Connect
 
 ---
 
@@ -68,7 +73,7 @@ Cursor IDE
   │
   └─ Cursor++ Extension (BYOK Server @ 127.0.0.1:9960)
       ├─ Fastify + ConnectRPC (27 services)
-      ├─ LLM: Anthropic / OpenAI / Gemini SDK
+      ├─ LLM: Anthropic / OpenAI / Gemini SDK + official Codex CLI
       ├─ Agent: multi-round tool-calling orchestrator
       └─ Config: ~/.ccursor/providers.json + routes.json
 ```
@@ -83,7 +88,7 @@ Config files are stored in `~/.ccursor/`:
 
 | File | Purpose |
 |---|---|
-| `providers.json` | LLM provider endpoints, API keys, and model definitions |
+| `providers.json` | LLM provider endpoints, API keys/auth mode, and model definitions |
 | `routes.json` | BYOK mode toggle + redirect whitelist |
 | `cursor.db` | Conversation persistence (SQLite) |
 
@@ -114,6 +119,45 @@ Config files are stored in `~/.ccursor/`:
 }
 ```
 
+### OpenAI Codex (ChatGPT Auth) Example
+
+First install and sign in with the official client:
+
+```bash
+npm install -g @openai/codex
+codex login
+codex login status
+```
+
+Then select `openai-codex (ChatGPT Auth)` in the Cursor++ sidebar. The UI creates a usable model entry automatically. The equivalent provider entry is:
+
+```json
+{
+  "id": "openai-codex",
+  "name": "OpenAI Codex (ChatGPT)",
+  "type": "openai-codex",
+  "baseUrl": "",
+  "auth": { "kind": "codex", "value": "" },
+  "models": [
+    {
+      "id": "openai-codex-gpt-5.4",
+      "apiModel": "gpt-5.4",
+      "displayName": "OpenAI Codex (ChatGPT)",
+      "thinking": true,
+      "thinkingLevel": "medium",
+      "contextTokenLimit": 200000,
+      "maxOutputTokens": 8192,
+      "supportsAgent": true,
+      "supportsImages": false,
+      "supportsSandboxing": true,
+      "defaultOn": true
+    }
+  ]
+}
+```
+
+Authentication, token refresh, and secure storage stay in the official Codex client. Cursor++ only runs `codex login status` and `codex exec`; it never opens `~/.codex/auth.json`. Set `codexPath` on the provider if Cursor cannot discover the CLI automatically.
+
 ---
 
 ## Platform Support
@@ -124,7 +168,7 @@ Config files are stored in `~/.ccursor/`:
 | Linux | ✅ |
 | Windows | ✅ |
 
-Requires **Cursor IDE** + **Node.js >= 18**.
+Requires **Cursor IDE** + **Node.js >= 18**. The ChatGPT-auth provider additionally requires the official **OpenAI Codex CLI**.
 
 ---
 
@@ -135,6 +179,8 @@ Requires **Cursor IDE** + **Node.js >= 18**.
 | Cannot sign in after install | Toggle BYOK OFF in sidebar panel, then sign in normally |
 | Model not found | Add the model in the sidebar panel or edit `~/.ccursor/providers.json` |
 | LLM 401/403/404 | Check API key and base URL in providers.json |
+| OpenAI Codex not found | Install `@openai/codex`, or set `codexPath` in the provider |
+| OpenAI Codex not logged in | Click **Sign in with ChatGPT**, finish `codex login`, then click **Check Login** |
 
 ---
 
@@ -148,5 +194,5 @@ This repository is for **issue tracking and documentation only** — source code
 ---
 
 <p align="center">
-  <a href="https://ccursor.cometix.dev">Hub</a> · <a href="https://www.npmjs.com/package/@cometix/ccursor">npm</a>
+  <a href="https://www.npmjs.com/package/@cometix/ccursor">npm</a>
 </p>

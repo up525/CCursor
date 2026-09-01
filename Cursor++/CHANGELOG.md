@@ -4,6 +4,26 @@ All notable changes to the Cursor++ BYOK extension are documented here.
 
 Format follows [Keep a Changelog](http://keepachangelog.com/).
 
+## [0.0.16]
+
+### Added
+
+- OpenAI Codex (ChatGPT Auth) provider: reuse the official Codex CLI login
+  without reading or persisting OAuth tokens in Cursor++
+- Sidebar login status check and visible `codex login` entry point
+- Cross-platform Codex CLI discovery with an optional per-provider executable path
+- Real-provider integration coverage for ChatGPT-authenticated model responses
+
+### Changed
+
+- OpenAI Codex runs through the official CLI in an ephemeral session; Ask/Plan
+  use a read-only sandbox, while Agent/Debug use workspace-write with approvals disabled
+- Provider configuration now supports credential-free `auth.kind: "codex"`
+
+### Removed
+
+- Linux.do Hub login gate and obsolete Hub documentation
+
 ## [0.0.7]
 
 ### Added

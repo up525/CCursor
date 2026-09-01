@@ -48,6 +48,24 @@ const TEST_PROVIDERS: ProvidersConfig = {
       ],
     },
     {
+      id: 'test-openai-codex',
+      name: 'Test OpenAI Codex',
+      type: 'openai-codex',
+      baseUrl: '',
+      auth: { kind: 'codex', value: '' },
+      models: [
+        {
+          id: 'openai-codex-test',
+          apiModel: 'gpt-5.4',
+          displayName: 'OpenAI Codex Test',
+          thinking: true,
+          thinkingLevel: 'medium',
+          contextTokenLimit: 200000,
+          supportsSandboxing: true,
+        },
+      ],
+    },
+    {
       id: 'test-gemini',
       name: 'Test Gemini',
       type: 'gemini',

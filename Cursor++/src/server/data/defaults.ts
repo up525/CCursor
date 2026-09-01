@@ -132,10 +132,10 @@ export function buildRedirectForMode(mode: ByokMode): string[] {
 
 // ── Provider / Model ──
 
-export type ProviderType = 'anthropic' | 'openai-chat' | 'openai-responses' | 'gemini'
+export type ProviderType = 'anthropic' | 'openai-chat' | 'openai-responses' | 'openai-codex' | 'gemini'
 
 export interface ProviderAuth {
-  kind: 'apiKey' | 'token'
+  kind: 'apiKey' | 'token' | 'codex'
   value: string
 }
 
@@ -221,6 +221,8 @@ export interface ProviderEntry {
   type: ProviderType
   baseUrl: string
   auth: ProviderAuth
+  /** Optional path to the official Codex CLI for the openai-codex provider. */
+  codexPath?: string
   models: ProviderModel[]
   /**
    * HTTP 代理 URL — 对 Anthropic / OpenAI provider 生效。

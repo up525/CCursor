@@ -18,6 +18,7 @@ import * as vscode from 'vscode'
 import { bumpRefreshSignal } from '../server'
 import { searchCatalog } from '../server/config/catalogStore'
 import { updateProviders } from '../server/config/providersStore'
+import { probeCodexAuth, resolveCodexExecutable } from '../server/handlers/llm/codexCli'
 import { resetProviderInstanceCache } from '../server/handlers/llm/providerRuntime'
 import { renderHtml } from './components/layout'
 import { getState, onStateChange, refreshState } from './state'
@@ -75,6 +76,40 @@ export class PanelProvider implements vscode.WebviewViewProvider {
         case 'editProvidersJson':
           await vscode.commands.executeCommand('cursor2plus.editProviders')
           break
+        case 'checkCodexAuth': {
+          const pid = typeof msg.pid === 'string' ? msg.pid : ''
+          const codexPath = typeof msg.codexPath === 'string' ? msg.codexPath : undefined
+          const result = await probeCodexAuth(codexPath)
+          this.view?.webview.postMessage({
+            type: 'codexAuthResult',
+            pid,
+            authenticated: result.authenticated,
+            detail: [result.version, result.detail, result.executable].filter(Boolean).join(' · '),
+          })
+          break
+        }
+        case 'loginCodex': {
+          const pid = typeof msg.pid === 'string' ? msg.pid : ''
+          const codexPath = typeof msg.codexPath === 'string' ? msg.codexPath : undefined
+          const executable = await resolveCodexExecutable(codexPath)
+          if (!executable) {
+            this.view?.webview.postMessage({
+              type: 'codexAuthResult',
+              pid,
+              authenticated: false,
+              detail: 'Official Codex CLI not found. Install it with: npm install -g @openai/codex',
+            })
+            break
+          }
+          const terminal = vscode.window.createTerminal({
+            name: 'OpenAI Codex Login',
+            shellPath: executable,
+            shellArgs: ['login'],
+          })
+          terminal.show(true)
+          this.view?.webview.postMessage({ type: 'toast', text: 'Finish signing in in the Codex terminal, then click Check Login.', level: 'info', duration: 7000 })
+          break
+        }
         case 'toggleFileLog':
           await vscode.commands.executeCommand('cursor2plus.toggleFileLog')
           break

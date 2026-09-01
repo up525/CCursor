@@ -44,5 +44,5 @@ export async function initRuntimeConfig(init: RuntimeConfigInit): Promise<void> 
 /** 历史接口: 当前实现按 providers.json 的 provider type 集合返回 */
 export function getAvailableProviders(): Provider[] {
   // 仅作占位; 真正的"模型可用性"由 providersStore + availableModels 合并决定
-  return ['anthropic', 'openai-chat', 'openai-responses', 'gemini']
+  return ['anthropic', 'openai-chat', 'openai-responses', 'openai-codex', 'gemini']
 }

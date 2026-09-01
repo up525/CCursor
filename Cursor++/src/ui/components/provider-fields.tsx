@@ -4,6 +4,7 @@ const PROVIDER_TYPES = [
   { value: 'anthropic', label: 'anthropic' },
   { value: 'openai-chat', label: 'openai-chat' },
   { value: 'openai-responses', label: 'openai-responses' },
+  { value: 'openai-codex', label: 'openai-codex (ChatGPT Auth)' },
   { value: 'gemini', label: 'gemini' },
 ]
 
@@ -30,6 +31,7 @@ export function ProviderFields() {
         Type + Auth Kind 行:
           - Anthropic 同时支持 x-api-key 和 Bearer token, 显示下拉
           - openai-chat / openai-responses / gemini 只有 apiKey, Auth Kind 字段隐藏,
+          - openai-codex 复用官方 Codex CLI 登录态,不保存 token,
             Type 下拉占满整行
       */}
       <div class="field-row" x-show="$store.app.getDraft(p.id).type === 'anthropic'">
@@ -58,7 +60,7 @@ export function ProviderFields() {
           options={PROVIDER_TYPES}
         />
       </div>
-      <div class="field">
+      <div class="field" x-show="$store.app.getDraft(p.id).type !== 'openai-codex'">
         <label>Base URL (leave empty for SDK default)</label>
         <input
           type="text"
@@ -69,7 +71,7 @@ export function ProviderFields() {
         />
         <div class="err" x-show="$store.app.validate(p.id).errors.baseUrl" x-text="$store.app.validate(p.id).errors.baseUrl"></div>
       </div>
-      <div class="field" x-data="{ showKey: false }">
+      <div class="field" x-data="{ showKey: false }" x-show="$store.app.getDraft(p.id).type !== 'openai-codex'">
         <label>Auth Value</label>
         <div class="input-reveal">
           <input
@@ -90,7 +92,7 @@ export function ProviderFields() {
         </div>
         <div class="err" x-show="$store.app.validate(p.id).errors.authValue" x-text="$store.app.validate(p.id).errors.authValue"></div>
       </div>
-      <div class="field" x-show="$store.app.getDraft(p.id).type !== 'gemini'">
+      <div class="field" x-show="$store.app.getDraft(p.id).type !== 'gemini' && $store.app.getDraft(p.id).type !== 'openai-codex'">
         <label>Proxy URL (optional)</label>
         <input
           type="text"
@@ -99,7 +101,7 @@ export function ProviderFields() {
           placeholder="http://127.0.0.1:8080"
         />
       </div>
-      <div class="field">
+      <div class="field" x-show="$store.app.getDraft(p.id).type !== 'openai-codex'">
         <label>
           {'Custom Headers (optional, JSON) '}
           <span style="opacity:.55;font-weight:normal;font-size:0.85em">e.g. anthropic-beta</span>
@@ -114,6 +116,33 @@ export function ProviderFields() {
         >
         </textarea>
         <div class="err" {...{ 'x-show': '$store.app.headersInvalid[p.id]' }}>Invalid JSON</div>
+      </div>
+      <div class="field" x-show="$store.app.getDraft(p.id).type === 'openai-codex'" x-cloak>
+        <label>Official OpenAI Codex CLI</label>
+        <div style="font-size:11px;line-height:1.5;opacity:.8;margin-bottom:8px">
+          Uses the ChatGPT account managed by the official Codex CLI. Cursor++ never reads or stores its OAuth tokens.
+        </div>
+        <input
+          type="text"
+          x-effect="if(document.activeElement !== $el) $el.value = $store.app.getDraft(p.id).codexPath || ''"
+          x-on:input="$store.app.updateField(p.id, 'codexPath', $event.target.value)"
+          placeholder="Optional path, e.g. ~/.local/bin/codex"
+        />
+        <div style="display:flex;gap:6px;align-items:center;margin-top:8px">
+          <button class="tiny secondary" type="button" x-on:click="$store.app.checkCodexAuth(p.id)">
+            Check Login
+          </button>
+          <button class="tiny secondary" type="button" x-on:click="$store.app.loginCodex(p.id)">
+            Sign in with ChatGPT
+          </button>
+        </div>
+        <div
+          style="font-size:11px;line-height:1.4;margin-top:7px;word-break:break-word"
+          x-show="$store.app.codexAuth[p.id]"
+          x-bind:style="$store.app.codexAuth[p.id]?.authenticated ? 'color:var(--vscode-testing-iconPassed)' : 'color:var(--vscode-errorForeground)'"
+          x-text="$store.app.codexAuth[p.id]?.loading ? 'Checking Codex login…' : $store.app.codexAuth[p.id]?.detail"
+        >
+        </div>
       </div>
     </>
   )

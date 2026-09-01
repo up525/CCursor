@@ -24,6 +24,7 @@ const OBSERVED_TRANSCRIPT_TOOLS: Record<Provider, string[]> = {
     'anthropic': ['Shell', 'Read', 'Edit', 'Write', 'Delete', 'Glob', 'Grep', 'ReadLints', 'WebSearch', 'WebFetch', 'AskQuestion', 'TodoWrite', 'Task', 'EditNotebook', 'GenerateImage', 'SwitchMode', 'AwaitShell', 'ListMcpResources', 'FetchMcpResource'],
     'openai-chat': OPENAI_OBSERVED,
     'openai-responses': OPENAI_OBSERVED,
+    'openai-codex': OPENAI_OBSERVED,
     'gemini': ['Shell', 'Glob', 'Grep', 'AwaitShell', 'Read', 'Delete', 'Edit', 'Write', 'TodoWrite', 'ReadLints', 'WebSearch', 'WebFetch', 'GenerateImage', 'AskQuestion', 'Task', 'ListMcpResources', 'FetchMcpResource', 'SwitchMode'],
 };
 
@@ -36,6 +37,7 @@ const PROMPT_VOCABULARY: Record<Provider, string[]> = {
     'anthropic': ['Shell', 'Read', 'Edit', 'Write', 'Grep', 'Glob', 'ReadLints', 'TodoWrite', 'Task', 'SwitchMode', 'CallDynamicTool', 'GetDynamicTools', 'ListMcpResources', 'FetchMcpResource'],
     'openai-chat': OPENAI_VOCAB,
     'openai-responses': OPENAI_VOCAB,
+    'openai-codex': OPENAI_VOCAB,
     'gemini': ['Shell', 'Read', 'Edit', 'Write', 'Grep', 'Glob', 'ReadLints', 'TodoWrite', 'Task', 'SwitchMode', 'CallDynamicTool', 'GetDynamicTools', 'ListMcpResources', 'FetchMcpResource'],
 };
 

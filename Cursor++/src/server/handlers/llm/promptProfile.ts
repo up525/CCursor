@@ -41,8 +41,9 @@ export function resolvePromptProfile(modelId: string): ProviderPromptProfile {
     const resolved = resolveModel(modelId);
     switch (resolved.provider) {
         case 'openai-chat':
-        case 'openai-responses': {
-            const toolCatalog = getProviderToolCatalog('openai-chat', 'main');
+        case 'openai-responses':
+        case 'openai-codex': {
+            const toolCatalog = getProviderToolCatalog(resolved.provider, 'main');
             return {
                 provider: resolved.provider,
                 variant: 'main',

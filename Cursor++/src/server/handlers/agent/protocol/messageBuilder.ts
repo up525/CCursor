@@ -180,7 +180,7 @@ export function buildMessages(
  *
  * 按 promptProfile 分发到三套模板:
  * - composer-fallback  → Composer 轻量 prompt
- * - openai-chat / openai-responses → GPT 专用架构
+ * - openai-chat / openai-responses / openai-codex → GPT 专用架构
  * - 其他 (Anthropic / Gemini) → 主模板
  */
 function buildSystemPrompt(parsed: ParsedRunRequest, promptProfile: ProviderPromptProfile): string {
@@ -192,7 +192,7 @@ function buildSystemPrompt(parsed: ParsedRunRequest, promptProfile: ProviderProm
       base += `\n\n${buildDynamicToolsSection(dynamicCatalog, parsed.supportsMcpAuth === true)}`
     }
   }
-  else if (promptProfile.provider === 'openai-chat' || promptProfile.provider === 'openai-responses') {
+  else if (promptProfile.provider === 'openai-chat' || promptProfile.provider === 'openai-responses' || promptProfile.provider === 'openai-codex') {
     base = buildOpenAISystemPrompt(parsed, promptProfile)
   }
   else {

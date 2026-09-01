@@ -57,7 +57,7 @@ export function normalizeToolCallIdForGemini(id: string): string {
   return sanitizeId(id, 64)
 }
 
-export type ProviderType = 'anthropic' | 'openai-chat' | 'openai-responses' | 'gemini'
+export type ProviderType = 'anthropic' | 'openai-chat' | 'openai-responses' | 'openai-codex' | 'gemini'
 
 export interface RepairDiagnostics {
   inputMessages: number
@@ -143,6 +143,7 @@ function getNormalizer(targetProvider: ProviderType): (id: string) => string {
     case 'anthropic': return normalizeToolCallIdForAnthropic
     case 'openai-chat': return normalizeToolCallIdForOpenAIChat
     case 'openai-responses': return normalizeToolCallIdForOpenAIResponses
+    case 'openai-codex': return normalizeToolCallIdForOpenAIChat
     case 'gemini': return normalizeToolCallIdForGemini
   }
 }
@@ -281,7 +282,7 @@ function normalizeIdsAndThinking(messages: LLMMessage[], targetProvider: Provide
             transformedContent.push({ ...block, id: getNormalizedId(block.id) })
           }
           else if (block.type === 'thinking') {
-            if (targetProvider === 'openai-chat') {
+            if (targetProvider === 'openai-chat' || targetProvider === 'openai-codex') {
               // OpenAI Chat 不支持 thinking 块 — 降级为 text
               signedThinkingDowngraded++
               if (block.text) transformedContent.push({ type: 'text', text: block.text })

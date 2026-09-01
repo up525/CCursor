@@ -18,7 +18,7 @@ export function ModelsSection() {
         >
         </span>
         <span class="models-header-actions">
-          <button class="tiny secondary" {...{ 'x-on:click': '$store.app.fetchRemoteModels(p.id)' }}>↓ Fetch</button>
+          <button class="tiny secondary" x-show="p.type !== 'openai-codex'" {...{ 'x-on:click': '$store.app.fetchRemoteModels(p.id)' }}>↓ Fetch</button>
           <button class="tiny secondary" {...{ 'x-on:click': '$store.app.addModel(p.id)' }}>+ Add Model</button>
         </span>
       </div>
@@ -54,10 +54,12 @@ export function ModelsSection() {
           No models. Click
           {' '}
           <b>+ Add Model</b>
-          {' '}
-          or
-          {' '}
-          <b>↓ Fetch</b>
+          <span x-show="p.type !== 'openai-codex'">
+            {' '}
+            or
+            {' '}
+            <b>↓ Fetch</b>
+          </span>
           {' '}
           to get started.
         </div>

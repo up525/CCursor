@@ -3,6 +3,7 @@ import type { ProviderEntry, ProviderType } from '../../data/defaults';
 import { AnthropicProvider } from './anthropic';
 import { OpenAIChatProvider } from './openai-chat';
 import { OpenAIResponsesProvider } from './openai-responses';
+import { OpenAICodexProvider } from './openai-codex';
 import { GeminiProvider } from './gemini';
 import { resolveModel } from '../models/mapper';
 import { makeByokConnectError } from '../errors';
@@ -60,7 +61,7 @@ export interface ProviderRuntime {
     thinking: boolean;
     contextTokenLimit: number;
     prepareConversation(messages: LLMMessage[]): PreparedProviderConversation;
-    prepareStreamRequest(messages: LLMMessage[], extraTools?: LLMTool[], maxTokens?: number, mode?: string, thinkingOverride?: { thinking?: boolean, level?: string, budget?: number }, conversationId?: string, isSubagent?: boolean, fastOverride?: boolean, disabledTools?: Set<string>, contextTokenLimitOverride?: number, builtinToolsOverride?: LLMTool[]): PreparedProviderRequest;
+    prepareStreamRequest(messages: LLMMessage[], extraTools?: LLMTool[], maxTokens?: number, mode?: string, thinkingOverride?: { thinking?: boolean, level?: string, budget?: number }, conversationId?: string, isSubagent?: boolean, fastOverride?: boolean, disabledTools?: Set<string>, contextTokenLimitOverride?: number, builtinToolsOverride?: LLMTool[], workingDirectory?: string): PreparedProviderRequest;
     /** 模型配置的最大输出 token 数 */
     maxOutputTokens: number;
     listRuntimeTools(extraTools?: LLMTool[], mode?: string, isSubagent?: boolean, disabledTools?: Set<string>, builtinToolsOverride?: LLMTool[]): LLMTool[];
@@ -80,6 +81,7 @@ function instantiateProvider(entry: ProviderEntry): LLMProvider {
         case 'anthropic': return new AnthropicProvider(entry);
         case 'openai-chat': return new OpenAIChatProvider(entry);
         case 'openai-responses': return new OpenAIResponsesProvider(entry);
+        case 'openai-codex': return new OpenAICodexProvider(entry);
         case 'gemini': return new GeminiProvider(entry);
     }
 }
@@ -101,7 +103,8 @@ function getStateStrategy(name: ProviderType): ProviderStateStrategy {
     switch (name) {
         case 'anthropic': return anthropicStateStrategy;
         case 'openai-chat':
-        case 'openai-responses': return openAIStateStrategy;
+        case 'openai-responses':
+        case 'openai-codex': return openAIStateStrategy;
         case 'gemini': return geminiStateStrategy;
     }
 }
@@ -111,6 +114,7 @@ function getConversationCodec(name: ProviderType): ProviderConversationCodec {
         case 'anthropic': return anthropicConversationCodec;
         case 'openai-chat': return openAIChatConversationCodec;
         case 'openai-responses': return openAIResponsesConversationCodec;
+        case 'openai-codex': return openAIChatConversationCodec;
         case 'gemini': return geminiConversationCodec;
     }
 }
@@ -158,13 +162,20 @@ export function resolveProviderRuntime(modelId: string): ProviderRuntime {
         maxOutputTokens: resolved.maxOutputTokens,
         contextTokenLimit: resolved.contextTokenLimit,
         prepareConversation,
-        prepareStreamRequest(messages: LLMMessage[], extraTools: LLMTool[] = [], maxTokens = resolved.noMaxTokens ? undefined : resolved.maxOutputTokens, mode?: string, thinkingOverride?: { thinking?: boolean, level?: string, budget?: number }, conversationId?: string, isSubagent = false, fastOverride?: boolean, disabledTools?: Set<string>, contextTokenLimitOverride?: number, builtinToolsOverride?: LLMTool[]): PreparedProviderRequest {
+        prepareStreamRequest(messages: LLMMessage[], extraTools: LLMTool[] = [], maxTokens = resolved.noMaxTokens ? undefined : resolved.maxOutputTokens, mode?: string, thinkingOverride?: { thinking?: boolean, level?: string, budget?: number }, conversationId?: string, isSubagent = false, fastOverride?: boolean, disabledTools?: Set<string>, contextTokenLimitOverride?: number, builtinToolsOverride?: LLMTool[], workingDirectory?: string): PreparedProviderRequest {
             const conversation = prepareConversation(messages);
             // 客户端运行时参数覆盖静态配置 (undefined = 不覆盖, 保留 providers.json 值)
             const thinking = thinkingOverride?.thinking ?? resolved.thinking;
             // Level 和 Budget 互斥: 客户端如果指定了其中一个,另一个必须清除
             let thinkingLevel = (thinkingOverride?.level as LLMStreamRequest['thinkingLevel']) ?? resolved.thinkingLevel;
             let thinkingBudgetTokens = thinkingOverride?.budget ?? resolved.thinkingBudgetTokens;
+            // QuickSwitch 的 reasoning=none 会传 thinking=false 且不带 level。
+            // 必须同时清掉静态模型上的默认 level/budget，否则 UI 看似关闭，
+            // 实际请求仍继续使用 providers.json 的默认推理档位。
+            if (thinkingOverride?.thinking === false) {
+                thinkingLevel = undefined;
+                thinkingBudgetTokens = undefined;
+            }
             if (thinkingLevel && thinkingBudgetTokens) {
                 thinkingBudgetTokens = undefined;
             }
@@ -238,6 +249,8 @@ export function resolveProviderRuntime(modelId: string): ProviderRuntime {
                     thinkingBudgetTokens,
                     maxTokens,
                     conversationId,
+                    workingDirectory,
+                    agentMode: mode,
                     ...(serviceTier ? { serviceTier } : {}),
                     ...(anthropicBetas.length ? { anthropicBetas } : {}),
                 },

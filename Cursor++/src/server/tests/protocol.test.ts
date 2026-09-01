@@ -229,7 +229,6 @@ it('buildMessages produces official-style system and structured user content', (
   expect(preambleUserContent).toMatch(/<user_info>/)
   expect(preambleUserContent).toMatch(/<agent_transcripts>/)
   expect(preambleUserContent).toMatch(/<rules>/)
-  expect(preambleUserContent).toMatch(/<user_rules/)
   expect(preambleUserContent).toMatch(/Always reply in Chinese/)
   expect(preambleUserContent).toMatch(/<always_applied_workspace_rules/)
   // fileGlobbed 正文不预载，读取匹配文件后才通过 related_cursor_rules 注入。

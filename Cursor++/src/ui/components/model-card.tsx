@@ -188,7 +188,7 @@ export function ModelCard() {
           </template>
 
           {/* ── OpenAI: Level only ── */}
-          <template x-if="m.thinking && (p.type === 'openai-chat' || p.type === 'openai-responses')">
+          <template x-if="m.thinking && (p.type === 'openai-chat' || p.type === 'openai-responses' || p.type === 'openai-codex')">
             <div class="check thinking-level-cell">
               <CustomSelect
                 valueExpr="m.thinkingLevel || 'medium'"
@@ -393,7 +393,7 @@ export function ModelCard() {
             </template>
 
             {/* ── OpenAI: Reasoning Levels (single enum, None auto-prepended) ── */}
-            <template x-if="p.type === 'openai-chat' || p.type === 'openai-responses'">
+            <template x-if="p.type === 'openai-chat' || p.type === 'openai-responses' || p.type === 'openai-codex'">
               <div class="qs-item" title="Expose reasoning level selector in Edit panel (None = off)">
                 <div class="qs-row">
                   <span class="qs-label">Reasoning Levels</span>

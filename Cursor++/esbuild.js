@@ -5,9 +5,6 @@ const { join } = require("path");
 const production = process.argv.includes("--production");
 const watch = process.argv.includes("--watch");
 
-// HUB_URL —— 字符串在 js-confuser 的 StringConcealing 下不可见
-const HUB_URL = "https://ccursor.cometix.dev";
-
 function copyRuntimeAssets() {
   mkdirSync(join(__dirname, "dist"), { recursive: true });
 
@@ -77,7 +74,6 @@ async function main() {
     jsxImportSource: "hono/jsx",
     define: {
       "import.meta.url": "undefined",
-      __HUB_URL__: JSON.stringify(HUB_URL),
     },
     plugins: [
       {

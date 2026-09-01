@@ -22,9 +22,9 @@
 
 ## What is Cursor++? / Cursor++ 是什么?
 
-Cursor++ lets you use **your own LLM API keys** (Anthropic, OpenAI, Google Gemini, or any OpenAI-compatible provider) with [Cursor IDE](https://cursor.com), bypassing the official subscription. It runs a local BYOK server inside Cursor's extension host, intercepts ConnectRPC/REST traffic, and routes LLM requests to your configured providers.
+Cursor++ lets you use **your own LLM API keys** (Anthropic, OpenAI, Google Gemini, or any OpenAI-compatible provider) or an **OpenAI Codex ChatGPT login** with [Cursor IDE](https://cursor.com). It runs a local BYOK server inside Cursor's extension host, intercepts ConnectRPC/REST traffic, and routes LLM requests to your configured providers.
 
-Cursor++ 让你使用**自己的 LLM API Key**（Anthropic / OpenAI / Google Gemini 或任何兼容服务商）驱动 [Cursor IDE](https://cursor.com)，无需官方订阅。它在 Cursor 扩展宿主内运行本地 BYOK 服务器，拦截 ConnectRPC/REST 通信并路由到你配置的服务商。
+Cursor++ 让你使用**自己的 LLM API Key**（Anthropic / OpenAI / Google Gemini 或任何兼容服务商），也可以通过**官方 OpenAI Codex CLI 的 ChatGPT 登录态**驱动 [Cursor IDE](https://cursor.com)。它在 Cursor 扩展宿主内运行本地 BYOK 服务器，拦截 ConnectRPC/REST 通信并路由到你配置的服务商。
 
 ---
 
@@ -36,6 +36,12 @@ npx @cometix/ccursor install
 
 # Restart Cursor, then open the Cursor++ sidebar panel to configure providers
 # 重启 Cursor，打开侧边栏 Cursor++ 面板配置服务商
+
+# Optional: use a ChatGPT account through the official OpenAI Codex CLI
+# 可选：通过官方 OpenAI Codex CLI 使用 ChatGPT 账号
+npm install -g @openai/codex
+codex login
+# 在 Cursor++ 中新增 Provider，选择 "openai-codex (ChatGPT Auth)"
 
 # Uninstall / 卸载
 npx @cometix/ccursor uninstall
@@ -51,8 +57,11 @@ npx @cometix/ccursor status
 - **BYOK Mode Toggle** — Sidebar one-click switch between BYOK and official Cursor  
   **BYOK 模式开关** — 侧边栏一键切换 BYOK 和官方 Cursor
 
-- **Multi-Provider** — Anthropic, OpenAI (Chat + Responses API), Google Gemini, or any compatible endpoint  
-  **多服务商** — Anthropic、OpenAI（Chat + Responses API）、Google Gemini 或任何兼容端点
+- **Multi-Provider** — Anthropic, OpenAI APIs, OpenAI Codex (ChatGPT Auth), Google Gemini, or any compatible endpoint
+  **多服务商** — Anthropic、OpenAI API、OpenAI Codex（ChatGPT Auth）、Google Gemini 或任何兼容端点
+
+- **Official OpenAI Auth Bridge** — Reuses the official Codex CLI login; Cursor++ never reads or stores ChatGPT OAuth tokens
+  **官方 OpenAI Auth 桥接** — 复用官方 Codex CLI 登录态；Cursor++ 不读取、不保存 ChatGPT OAuth token
 
 - **Full Agent Mode** — Tool calling, multi-turn conversations, auto-summarization, checkpoint persistence  
   **完整 Agent** — 工具调用、多轮对话、自动摘要、检查点持久化
@@ -72,9 +81,6 @@ npx @cometix/ccursor status
 - **22 Agent Tools** — Shell, Read, Grep, Glob, StrReplace, Write, Task, MCP, etc.  
   **22 个 Agent 工具** — Shell、Read、Grep、Glob、StrReplace、Write、Task、MCP 等
 
-- **Hub Integration** — Device authorization via LinuxDO Connect  
-  **Hub 集成** — 通过 LinuxDO Connect 设备授权
-
 ---
 
 ## How It Works / 工作原理
@@ -90,7 +96,7 @@ Cursor IDE
   │
   └─ Cursor++ Extension (BYOK Server @ 127.0.0.1:9960)
       ├─ Fastify + ConnectRPC (27 services)
-      ├─ LLM: Anthropic / OpenAI / Gemini SDK
+      ├─ LLM: Anthropic / OpenAI / Gemini SDK + official Codex CLI
       ├─ Agent: multi-round tool-calling orchestrator
       └─ Config: ~/.ccursor/providers.json + routes.json
 ```
@@ -106,7 +112,7 @@ Config files in `~/.ccursor/`:
 
 | File | Purpose / 用途 |
 |---|---|
-| `providers.json` | LLM providers, API keys, models / 服务商、密钥、模型定义 |
+| `providers.json` | LLM providers, API keys/auth mode, models / 服务商、密钥或认证方式、模型定义 |
 | `routes.json` | BYOK toggle + redirect whitelist / BYOK 开关 + 重定向白名单 |
 | `cursor.db` | Conversation persistence / 对话持久化 |
 
@@ -137,6 +143,45 @@ Config files in `~/.ccursor/`:
 }
 ```
 
+### OpenAI Codex（ChatGPT Auth）配置示例
+
+先安装官方客户端并登录：
+
+```bash
+npm install -g @openai/codex
+codex login
+codex login status
+```
+
+然后在 Cursor++ 侧边栏选择 `openai-codex (ChatGPT Auth)`，界面会自动创建一个可用的模型配置。等价的 Provider 配置如下：
+
+```json
+{
+  "id": "openai-codex",
+  "name": "OpenAI Codex (ChatGPT)",
+  "type": "openai-codex",
+  "baseUrl": "",
+  "auth": { "kind": "codex", "value": "" },
+  "models": [
+    {
+      "id": "openai-codex-gpt-5.4",
+      "apiModel": "gpt-5.4",
+      "displayName": "OpenAI Codex (ChatGPT)",
+      "thinking": true,
+      "thinkingLevel": "medium",
+      "contextTokenLimit": 200000,
+      "maxOutputTokens": 8192,
+      "supportsAgent": true,
+      "supportsImages": false,
+      "supportsSandboxing": true,
+      "defaultOn": true
+    }
+  ]
+}
+```
+
+登录、token 刷新和安全存储都由官方 Codex 客户端负责。Cursor++ 只运行 `codex login status` 和 `codex exec`，不会打开 `~/.codex/auth.json`。如果 Cursor 自动找不到 CLI，可以在 Provider 中设置 `codexPath`。
+
 ---
 
 ## Platform / 平台支持
@@ -147,7 +192,7 @@ Config files in `~/.ccursor/`:
 | Linux | ✅ |
 | Windows | ✅ |
 
-Requires **Cursor IDE** + **Node.js >= 18**.
+需要 **Cursor IDE** + **Node.js >= 18**。使用 ChatGPT Auth Provider 时，还需要安装官方 **OpenAI Codex CLI**。
 
 ---
 
@@ -158,6 +203,8 @@ Requires **Cursor IDE** + **Node.js >= 18**.
 | Cannot sign in after install / 安装后无法登录 | Toggle BYOK OFF in sidebar, then sign in / 侧边栏切 OFF 后登录 |
 | Model not found / 模型未找到 | Add model in sidebar panel / 在面板中添加模型 |
 | LLM 401/403/404 | Check API key & base URL in providers.json / 检查密钥和地址 |
+| 找不到 OpenAI Codex | 安装 `@openai/codex`，或在 Provider 中设置 `codexPath` |
+| OpenAI Codex 未登录 | 点击 **Sign in with ChatGPT**，完成 `codex login` 后点击 **Check Login** |
 
 ---
 
@@ -173,5 +220,5 @@ This repository is for **issue tracking and documentation only** — source code
 ---
 
 <p align="center">
-  <a href="https://linux.do/t/topic/1926833">LinuxDO</a> · <a href="https://ccursor.cometix.dev">Hub</a> · <a href="https://www.npmjs.com/package/@cometix/ccursor">npm</a>
+  <a href="https://linux.do/t/topic/1926833">LinuxDO</a> · <a href="https://www.npmjs.com/package/@cometix/ccursor">npm</a>
 </p>

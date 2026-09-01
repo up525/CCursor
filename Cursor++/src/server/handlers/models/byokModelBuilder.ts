@@ -119,12 +119,12 @@ function buildParameterDefinitions(
 
   const defs: ModelParameterDefinition[] = []
   const axes: ParamAxis[] = []
-  const isOpenAI = provider.type === 'openai-chat' || provider.type === 'openai-responses'
+  const isOpenAI = provider.type === 'openai-chat' || provider.type === 'openai-responses' || provider.type === 'openai-codex'
 
   // ── Reasoning / Thinking+Effort / Budget ──
   if (params.reasoning && isOpenAI) {
     const levels: Array<{ value: string, displayName?: string }> = [
-      { value: 'none', displayName: 'None' },
+      ...(provider.type === 'openai-codex' ? [] : [{ value: 'none', displayName: 'None' }]),
       ...params.reasoning.map(l => ({ value: l, displayName: LEVEL_LABELS[l] ?? l })),
     ]
     defs.push(makeEnumParamDef('reasoning', 'Reasoning', levels))

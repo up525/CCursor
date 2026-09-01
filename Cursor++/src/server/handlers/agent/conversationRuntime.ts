@@ -1005,7 +1005,8 @@ export async function* handleConversationRun(
       }, parsed.conversationId, parsed.isSubagent, parsed.clientFast,
       disabledToolsForRun.size > 0 ? disabledToolsForRun : undefined,
       contextTokenLimit,
-      runtimeBuiltinTools)
+      runtimeBuiltinTools,
+      parsed.env.projectFolder ?? parsed.env.workspacePaths?.[0])
 
       if (!breakdownCategories) {
         breakdownCategories = buildContextBreakdown({

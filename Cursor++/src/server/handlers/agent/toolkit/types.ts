@@ -8,8 +8,8 @@ export interface ToolExecBuildOptions {
 }
 
 /**
- * Provider 族 — 将 4 种 ProviderType 归约为 3 种工具目录。
- * openai-chat 与 openai-responses 共享同一套工具定义。
+ * Provider 族 — 将 ProviderType 归约为 3 种工具目录。
+ * OpenAI API 与官方 Codex CLI provider 共享同一套工具定义。
  */
 export type ProviderFamily = 'anthropic' | 'openai' | 'gemini';
 
@@ -17,7 +17,8 @@ export function toProviderFamily(pt: ProviderType): ProviderFamily {
     switch (pt) {
         case 'anthropic': return 'anthropic';
         case 'openai-chat':
-        case 'openai-responses': return 'openai';
+        case 'openai-responses':
+        case 'openai-codex': return 'openai';
         case 'gemini': return 'gemini';
         default: return 'anthropic';
     }
